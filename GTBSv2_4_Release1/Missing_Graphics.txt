@@ -1,0 +1,7 @@
+Graphics/Battlers/$Bat_down
+Graphics/Battlers/$HolderChickANIM_down
+Graphics/Battlers/$vampire_a
+Graphics/Battlers/$vampire_a
+Graphics/Battlers/$Bat_down
+Graphics/Battlers/$Bat_down
+Graphics/Battlers/Monster1

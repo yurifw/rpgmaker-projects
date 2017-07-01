@@ -1,0 +1,301 @@
+#===============================================================================
+# ** Choose Class System
+# Autor: miguel8884
+#-------------------------------------------------------------------------------
+# Data de lançamento: 17/08/2014
+# Versão: 1.0
+#-------------------------------------------------------------------------------
+# Dependências:
+# * Nenhum
+#-------------------------------------------------------------------------------
+# Descrição:
+#
+# O script faz com que apareça uma tela de escolha de classe onde é possível
+# aparecer uma imagem da classe, e seus atributos, além de uma curta descrição
+# da mesma!
+#-------------------------------------------------------------------------------
+# Características:
+# * Altamente configurável!
+# * Número de classes ilimitadas!
+# * Mudança automática de classe!
+# * Barras de atributos!
+# * Descrição para a classe!
+#-------------------------------------------------------------------------------
+# Log:
+# v1.0
+#   17/08/2014 - Script lançado!
+#===============================================================================
+module Choose_Class
+  #=============================================================================
+  # Vocabulário
+  #=============================================================================
+  # Vocabulário da window superior #
+  Choose_Class_Vocab = "Escolha uma classe"
+  # Vocabulário para barra de ataque #
+  Attack_Vocab = "ATK"
+  # Vocabulário para barra de defesa #
+  Defense_Vocab = "DEF"
+  # Vocabulário para barra de ataque mágico #
+  Mag_Attack_Vocab = "MAT"
+  # Vocabulário para barra de defesa mágica #
+  Mag_Defense_Vocab = "MDF"
+  # Vocabulário para barra de agilidade #
+  Agility_Vocab = "AGI"
+  # Vocabulário para barra de sorte #
+  Luck_Vocab = "LUC"
+  #=============================================================================
+  # Configurações básicas
+  #=============================================================================
+  # Chamar a escolha de classe após definir novo jogo? #
+  Call_After_Scene_Title = true
+  # Número que os atributos das classes serão divididos #
+  Max_Number = 99
+  #=============================================================================
+  # Imagens
+  #=============================================================================
+  # Fundo de parallax? #
+  Parallax_Background = true
+  # Nome do fundo de parallax #
+  Parallax_Background_Img = "DarkSpace2"
+  # Animação no fundo de parallax? #
+  Parallax_Background_Animation = true
+  # Velocidade da aniamção #
+  Parallax_Background_Speed = 1
+  # Imagem na pasta pictures caso não use parallax #
+  Image_Background_Img = ""
+  # Imagem do battler de cada classe - deve estar na ordem das classes definidas #
+  Class_Image = [
+  "Warrior_m",
+  "Grappler_m",
+  "Delf_f",
+  "Cleric_m",
+  "Captain",
+  "Swordman",
+  "Delf_m",
+  "Thief_f",
+  "Priest",
+  "Mage",
+  "Wizard_m"
+  ]
+  #=============================================================================
+  # Classes
+  #=============================================================================
+  # Id das classes no abnco de dados que serão utilziadas na lista #
+  Classes = [
+  1,2,3,4,5,6,7,8,9,10
+  ]
+  # Descrição das classes, em ordem das classes definidas #
+  Description = [
+  "Guerreiro",
+  "Monge",
+  "Cavaleiro",
+  "Espadachim",
+  "Samurai",
+  "Arqueiro",
+  "Ladino",
+  "Sacerdote",
+  "Mago",
+  "Sábio"
+  ]
+  #=============================================================================
+  # Cores
+  #=============================================================================
+  # Cor de cada barra, sendo a primeira a cor 1 do degradê e a segunda a cor
+  # 2 do degradê, cada cor segue esse padrão: RGB, ou seja, vermelho verde e
+  # azul.
+  # A sequência de cores é a seguinte:
+  # Ataque
+  # Defesa
+  # Ataque Mágico
+  # Defesa Mágica
+  # Agilidade
+  # Sorte
+  #=============================================================================
+  Color1 = [Color.new(0,255,0),Color.new(0,190,0)]
+  Color2 = [Color.new(0,255,0),Color.new(0,190,0)]
+  Color3 = [Color.new(0,255,0),Color.new(0,190,0)]
+  Color4 = [Color.new(0,255,0),Color.new(0,190,0)]
+  Color5 = [Color.new(0,255,0),Color.new(0,190,0)]
+  Color6 = [Color.new(0,255,0),Color.new(0,190,0)]
+  #=============================================================================
+  # Fim das configurações
+  #=============================================================================
+end
+#===============================================================================
+# Aqui começa o script - Não mexa
+#===============================================================================
+class Scene_Title < Scene_Base
+  alias gst_cc_cng command_new_game
+  def command_new_game
+    if Choose_Class::Call_After_Scene_Title
+      SceneManager.call(Scene_Classes)
+    else
+      gst_cc_cng
+    end
+  end
+end
+#===============================================================================
+# Classe que cria a window superior
+#===============================================================================
+class Window_ChooseClass < Window_Base
+  def initialize
+    super(0,0,544,54)
+    draw_text(0,0,544,30,Choose_Class::Choose_Class_Vocab,1)
+  end
+end
+#===============================================================================
+# Cria a window que guarda as barras
+#===============================================================================
+class Window_ClassesBase < Window_Base
+  attr_accessor :index
+  def initialize
+    super(130,54,249,299-54)
+    @index = 0
+    create_gauges
+  end
+  def update
+    super
+    create_gauges
+  end
+  def create_gauges
+    self.contents.clear
+    draw_text(0,0,130,30,$data_classes[Choose_Class::Classes[@index]].name)
+    draw_gauge(0,30,200,$data_classes[Choose_Class::Classes[@index]].params[2,1].to_f/Choose_Class::Max_Number.to_f,Choose_Class::Color1[0],Choose_Class::Color1[1])
+    draw_text(0,30,200,30,Choose_Class::Attack_Vocab,1)
+    draw_gauge(0,60,200,$data_classes[Choose_Class::Classes[@index]].params[3,1].to_f/Choose_Class::Max_Number.to_f,Choose_Class::Color2[0],Choose_Class::Color2[1])
+    draw_text(0,60,200,30,Choose_Class::Defense_Vocab,1)
+    draw_gauge(0,90,200,$data_classes[Choose_Class::Classes[@index]].params[4,1].to_f/Choose_Class::Max_Number.to_f,Choose_Class::Color3[0],Choose_Class::Color3[1])
+    draw_text(0,90,200,30,Choose_Class::Mag_Attack_Vocab,1)
+    draw_gauge(0,120,200,$data_classes[Choose_Class::Classes[@index]].params[5,1].to_f/Choose_Class::Max_Number.to_f,Choose_Class::Color4[0],Choose_Class::Color4[1])
+    draw_text(0,120,200,30,Choose_Class::Mag_Defense_Vocab,1)
+    draw_gauge(0,150,200,$data_classes[Choose_Class::Classes[@index]].params[6,1].to_f/Choose_Class::Max_Number.to_f,Choose_Class::Color5[0],Choose_Class::Color5[1])
+    draw_text(0,150,200,30,Choose_Class::Agility_Vocab,1)
+    draw_gauge(0,180,200,$data_classes[Choose_Class::Classes[@index]].params[7,1].to_f/Choose_Class::Max_Number.to_f,Choose_Class::Color6[0],Choose_Class::Color6[1])
+    draw_text(0,180,200,30,Choose_Class::Luck_Vocab,1)
+  end
+end
+#===============================================================================
+# Cria a window que faz a lista de classes
+#===============================================================================
+class Window_ClassesList < Window_Command
+  def initialize
+    super(0,54)
+  end
+  def window_width
+    return 130
+  end
+  def window_height
+    if item_max >= 14
+      return 416-54
+    else
+      return fitting_height(item_max)
+    end
+  end
+  def visible_line_number
+    return 16
+  end
+  def make_command_list
+    Choose_Class::Classes.each_index{|c|
+      add_command($data_classes[Choose_Class::Classes[c]].name,:class)
+    }
+  end
+end
+#===============================================================================
+# Classe que cria a window de descrição
+#===============================================================================
+class Window_ClassDescription < Window_Base
+  attr_accessor :index
+  def initialize
+    super(130,416-118,544-130,118)
+    @index = 0
+    create_description
+  end
+  def update
+    super
+    create_description
+  end
+  def create_description
+    self.contents.clear
+    draw_text(0,0,544-130,40,Choose_Class::Description[@index],1)
+  end
+end
+#===============================================================================
+# Classe que gerencia a scene das classes
+#===============================================================================
+class Scene_Classes < Scene_Base
+  def start
+    super
+    create_background
+    create_windows
+    create_command_window
+    @battler = Sprite.new
+    create_battlers
+  end
+  def update
+    super
+    @window_description.index = @command_window.index
+    @window_base.index = @command_window.index
+    if Choose_Class::Parallax_Background_Animation && @back.is_a?(Plane)
+      @back.ox += Choose_Class::Parallax_Background_Speed
+    end
+    create_battlers
+  end
+  def terminate
+    super
+    dispose_background
+    dispose_windows
+    dispose_battlers
+  end
+  def create_background
+    if Choose_Class::Parallax_Background
+      @back = Plane.new
+      @back.bitmap = Cache.parallax(Choose_Class::Parallax_Background_Img)
+    else
+      @back = Sprite.new
+      @back.bitmap = Cache.picture(Choose_Class::Image_Background_Img)
+    end
+  end
+  def dispose_background
+    @back.bitmap.dispose
+    @back.dispose
+  end
+  def dispose_windows
+    @window_description.dispose
+    @window_base.dispose
+    @window_classchoose.dispose
+    @command_window.dispose
+  end
+  def create_windows
+    @window_description = Window_ClassDescription.new
+    @window_base = Window_ClassesBase.new
+    @window_classchoose = Window_ChooseClass.new
+  end
+  def create_command_window
+    @command_window = Window_ClassesList.new
+    @command_window.set_handler(:class,method(:choosed_class))
+  end
+  def create_battlers
+    @battler.dispose
+    @battler = Sprite.new
+    @battler.bitmap = Cache.battler(Choose_Class::Class_Image[@command_window.index],0)
+    @battler.z = 999
+    @battler.x = 130+249
+    @battler.y = 74
+  end
+  def dispose_battlers
+    @battler.bitmap.dispose
+    @battler.dispose
+  end
+  def choosed_class
+    DataManager.setup_new_game
+    fadeout_all
+    $game_map.autoplay
+    SceneManager.goto(Scene_Map)
+    $game_party.members[0].change_class(Choose_Class::Classes[@command_window.index])
+    $game_party.members[0].hp = $game_party.members[0].mhp
+    $game_party.members[0].mp = $game_party.members[0].mmp
+  end
+end
+#===============================================================================
+# Fim do script
+#===============================================================================

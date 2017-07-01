@@ -1,0 +1,567 @@
+# =============================================================================
+# Simple Trade Shop
+# 
+# 
+# 
+# =============================================================================
+# Before using the following script, please be reminded that trading can be done
+# using common events. However, if you want to do trading using a shop, feel free
+# to use this! 
+# =============================================================================
+# Instructions:
+# Copy the script.
+# Change the settings to your liking.
+# Call apple_barter_go("shop name") in an event.
+# =============================================================================
+ 
+# =============================================================================
+# The module is named Apple_Barter_Module because I was using apples to test it 
+# but now that I'm commenting this, it sounds a little stupid, heh.
+# =============================================================================
+module Apple_Barter_Module 
+# =============================================================================
+# The Goods array contains the items you want your npc to trade for your item/s.
+# Check below for its settings.
+# | You can put 0, 1 or 2    |The item| You can put 0 or 1   | Here you decide  |
+# |        here              |Id goes | here but you'd want  | how many of a    |
+# | 0 for Items (Potions etc)|here    | to put 1 here so you | certain item     |
+# | 1 for Weapons            |(selling| can decide the price | your npc would   |                                                                                                                     
+# | 2 for Armors             | item)  | of the npc's items   | ask for the trade|                                                  
+# -----------------------------------------------------------------------------                                                                                         
+
+                                                                    
+   Goods={"shop1" => [[0,19,1,20],
+                      [1,12,1,10],
+            		      [1,24,1,10]],
+          "shop2" => [[0,20,1,20],
+                      [1,12,1,10],
+            		      [1,24,1,10]],
+          "shop3" => [[0,19,1,20],
+            		      [1,12,1,10],
+            		      [1,24,1,10]]
+   }
+# -----------------------------------------------------------------------------
+# =============================================================================
+
+# =============================================================================
+# Unit should contain the string that will replace what is "G" in 
+# the shop in the default settings.
+# ----------------------------------------------------------------------------- 
+   Unit = "Mythril"
+# -----------------------------------------------------------------------------
+# =============================================================================
+
+# =============================================================================
+# The following will set what item the npc would ask for.
+# 0(Items) , 1(Weapons), or 2(Armors) for the Unit_class_id
+# The Item ID for Unit_id
+# -----------------------------------------------------------------------------
+   Unit_class_id = 0
+   Unit_id = 18  # item id of the item the npc will want
+# -----------------------------------------------------------------------------
+# =============================================================================
+   
+# =============================================================================
+# Purchase_only decides whether you can sell items to the shop or not.
+# Note that you will receive gold for your items.
+# -----------------------------------------------------------------------------
+    Purchase_only = true
+# -----------------------------------------------------------------------------
+# =============================================================================
+end
+
+# =============================================================================
+# I've changed what the shop normally shows "Buy" into "Trade" but you can
+# change it into something else by replacing Trade at line 452.
+# -----------------------------------------------------------------------------
+# Creating another barter shop besides the first one could be a little tricky. 
+# First you would need to copy the script and paste the copy anywhere in the
+# Materials section. Go into the copy. Select the word Apple anywhere and 
+# press Ctrl+H for Replace. Tick Match Case on and replace Apple with any word 
+# that starts with a capital letter. Next select the word apple (note the 
+# lowercase) and do another replace, this time with a word that starts with a
+# lowercase letter. Changing apple changes the script call into the word you 
+# changed apple into followed by _barter_go. And that's it. Don't forget to tweak
+# the settings of the new shop and maybe change the script's name as well.
+# -----------------------------------------------------------------------------
+#
+# =============================================================================
+# Read further to see my messy code.
+# =============================================================================
+class Apple_Barter < Scene_Shop
+  
+  #--------------------------------------------------------------------------
+  # * Prepare
+  #--------------------------------------------------------------------------
+  def prepare(goods,purchase_only)
+    @goods = goods
+    @purchase_only = purchase_only
+    $game_party.apple_value()
+  end
+  #--------------------------------------------------------------------------
+  # * Start Processing
+  #--------------------------------------------------------------------------
+  def start
+    super
+    create_help_window
+    create_gold_window
+    create_command_window
+    create_dummy_window
+    create_number_window
+    create_status_window
+    create_buy_window
+    create_category_window
+    create_sell_window
+  end
+  #--------------------------------------------------------------------------
+  # * Create Gold Window
+  #--------------------------------------------------------------------------
+  def create_gold_window
+    @gold_window = Window_Apple.new
+    @gold_window.viewport = @viewport
+    @gold_window.x = Graphics.width - @gold_window.width
+    @gold_window.y = @help_window.height
+  end
+  #--------------------------------------------------------------------------
+  # * Create Command Window
+  #--------------------------------------------------------------------------
+  def create_command_window
+    @command_window = Apple_Window_ShopCommand.new(@gold_window.x, @purchase_only)
+    @command_window.viewport = @viewport
+    @command_window.y = @help_window.height
+    @command_window.set_handler(:buy,    method(:command_buy))
+    @command_window.set_handler(:sell,   method(:command_sell))
+    @command_window.set_handler(:cancel, method(:return_scene))
+  end
+  #--------------------------------------------------------------------------
+  # * Create Dummy Window
+  #--------------------------------------------------------------------------
+  def create_dummy_window
+    wy = @command_window.y + @command_window.height
+    wh = Graphics.height - wy
+    @dummy_window = Window_Base.new(0, wy, Graphics.width, wh)
+    @dummy_window.viewport = @viewport
+  end
+  #--------------------------------------------------------------------------
+  # * Create Quantity Input Window
+  #--------------------------------------------------------------------------
+  def create_number_window
+    wy = @dummy_window.y
+    wh = @dummy_window.height
+    @number_window = Window_ShopNumber.new(0, wy, wh)
+    @number_window.viewport = @viewport
+    @number_window.hide
+    @number_window.set_handler(:ok,     method(:on_number_ok))
+    @number_window.set_handler(:cancel, method(:on_number_cancel))
+  end
+  #--------------------------------------------------------------------------
+  # * Create Status Window
+  #--------------------------------------------------------------------------
+  def create_status_window
+    wx = @number_window.width
+    wy = @dummy_window.y
+    ww = Graphics.width - wx
+    wh = @dummy_window.height
+    @status_window = Window_ShopStatus.new(wx, wy, ww, wh)
+    @status_window.viewport = @viewport
+    @status_window.hide
+  end
+  #--------------------------------------------------------------------------
+  # * Create Purchase Window
+  #--------------------------------------------------------------------------
+  def create_buy_window
+    wy = @dummy_window.y
+    wh = @dummy_window.height
+    @buy_window = Window_ShopBuy.new(0, wy, wh, @goods)
+    @buy_window.viewport = @viewport
+    @buy_window.help_window = @help_window
+    @buy_window.status_window = @status_window
+    @buy_window.hide
+    @buy_window.set_handler(:ok,     method(:on_buy_ok))
+    @buy_window.set_handler(:cancel, method(:on_buy_cancel))
+  end
+  #--------------------------------------------------------------------------
+  # * Create Category Window
+  #--------------------------------------------------------------------------
+  def create_category_window
+    @category_window = Window_ItemCategory.new
+    @category_window.viewport = @viewport
+    @category_window.help_window = @help_window
+    @category_window.y = @dummy_window.y
+    @category_window.hide.deactivate
+    @category_window.set_handler(:ok,     method(:on_category_ok))
+    @category_window.set_handler(:cancel, method(:on_category_cancel))
+  end
+  #--------------------------------------------------------------------------
+  # * Create Sell Window
+  #--------------------------------------------------------------------------
+  def create_sell_window
+    wy = @category_window.y + @category_window.height
+    wh = Graphics.height - wy
+    @sell_window = Window_ShopSell.new(0, wy, Graphics.width, wh)
+    @sell_window.viewport = @viewport
+    @sell_window.help_window = @help_window
+    @sell_window.hide
+    @sell_window.set_handler(:ok,     method(:on_sell_ok))
+    @sell_window.set_handler(:cancel, method(:on_sell_cancel))
+    @category_window.item_window = @sell_window
+  end
+  #--------------------------------------------------------------------------
+  # * Activate Purchase Window
+  #--------------------------------------------------------------------------
+  def activate_buy_window
+    @buy_window.money = money
+    @buy_window.show.activate
+    @status_window.show
+  end
+  #--------------------------------------------------------------------------
+  # * Activate Sell Window
+  #--------------------------------------------------------------------------
+  def activate_sell_window
+    @category_window.show
+    @sell_window.refresh
+    @sell_window.show.activate
+    @status_window.hide
+  end
+  #--------------------------------------------------------------------------
+  # * [Buy] Command
+  #--------------------------------------------------------------------------
+  def command_buy
+    @dummy_window.hide
+    activate_buy_window
+  end
+  #--------------------------------------------------------------------------
+  # * [Sell] Command
+  #--------------------------------------------------------------------------
+  def command_sell
+    @dummy_window.hide
+    @category_window.show.activate
+    @sell_window.show
+    @sell_window.unselect
+    @sell_window.refresh
+  end
+  #--------------------------------------------------------------------------
+  # * Buy [OK]
+  #--------------------------------------------------------------------------
+  def on_buy_ok
+    @item = @buy_window.item
+    @buy_window.hide
+    @number_window.set(@item, max_buy, buying_price, custom_currency_unit)
+    @number_window.show.activate
+  end
+  #--------------------------------------------------------------------------
+  # * Buy [Cancel]
+  #--------------------------------------------------------------------------
+  def on_buy_cancel
+    @command_window.activate
+    @dummy_window.show
+    @buy_window.hide
+    @status_window.hide
+    @status_window.item = nil
+    @help_window.clear
+  end
+  #--------------------------------------------------------------------------
+  # * Category [OK]
+  #--------------------------------------------------------------------------
+  def on_category_ok
+    activate_sell_window
+    @sell_window.select(0)
+  end
+  #--------------------------------------------------------------------------
+  # * Category [Cancel]
+  #--------------------------------------------------------------------------
+  def on_category_cancel
+    @command_window.activate
+    @dummy_window.show
+    @category_window.hide
+    @sell_window.hide
+  end
+  #--------------------------------------------------------------------------
+  # * Sell [OK]
+  #--------------------------------------------------------------------------
+  def on_sell_ok
+    @item = @sell_window.item
+    @status_window.item = @item
+    @category_window.hide
+    @sell_window.hide
+    @number_window.set(@item, max_sell, selling_price, Vocab::currency_unit)
+    @number_window.show.activate
+    @status_window.show
+  end
+  #--------------------------------------------------------------------------
+  # * Sell [Cancel]
+  #--------------------------------------------------------------------------
+  def on_sell_cancel
+    @sell_window.unselect
+    @category_window.activate
+    @status_window.item = nil
+    @help_window.clear
+  end
+  #--------------------------------------------------------------------------
+  # * Quantity Input [OK]
+  #--------------------------------------------------------------------------
+  def on_number_ok
+    Sound.play_shop
+    case @command_window.current_symbol
+    when :buy
+      do_buy(@number_window.number)
+    when :sell
+      do_sell(@number_window.number)
+    end
+    end_number_input
+    @gold_window.refresh
+    @status_window.refresh
+  end
+  #--------------------------------------------------------------------------
+  # * Quantity Input [Cancel]
+  #--------------------------------------------------------------------------
+  def on_number_cancel
+    Sound.play_cancel
+    end_number_input
+  end
+  #--------------------------------------------------------------------------
+  # * Execute Purchase
+  #--------------------------------------------------------------------------
+  def do_buy(number)
+    $game_party.lose_apple(number * buying_price)
+    $game_party.gain_item(@item, number)
+  end
+  #--------------------------------------------------------------------------
+  # * Execute Sale
+  #--------------------------------------------------------------------------
+  def do_sell(number)
+    $game_party.gain_gold(number * selling_price)
+    $game_party.lose_item(@item, number)
+  end
+  #--------------------------------------------------------------------------
+  # * Exit Quantity Input
+  #--------------------------------------------------------------------------
+  def end_number_input
+    @number_window.hide
+    case @command_window.current_symbol
+    when :buy
+      activate_buy_window
+    when :sell
+      activate_sell_window
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * Get Maximum Quantity Buyable
+  #--------------------------------------------------------------------------
+  def max_buy
+    max = $game_party.max_item_number(@item) - $game_party.item_number(@item)
+    buying_price == 0 ? max : [max, money / buying_price].min
+  end
+  #--------------------------------------------------------------------------
+  # * Get Maximum Quantity Sellable
+  #--------------------------------------------------------------------------
+  def max_sell
+    $game_party.item_number(@item)
+  end
+  #--------------------------------------------------------------------------
+  # * Get Party Gold
+  #--------------------------------------------------------------------------
+  def money
+    @gold_window.value
+  end
+  #--------------------------------------------------------------------------
+  # Get Currency Unit
+  #--------------------------------------------------------------------------
+  def custom_currency_unit
+    @gold_window.custom_currency_unit
+  end
+
+  #--------------------------------------------------------------------------
+  # * Get Purchase Price
+  #--------------------------------------------------------------------------
+  def buying_price
+    @buy_window.price(@item)
+  end
+  #--------------------------------------------------------------------------
+  # * Get Sale Price
+  #--------------------------------------------------------------------------
+  def selling_price
+    @item.price / 2
+  end
+  
+  
+end
+
+
+class Window_Apple < Window_Base
+  #--------------------------------------------------------------------------
+  # * Object Initialization
+  #--------------------------------------------------------------------------
+  def initialize
+    super(0, 0, window_width, fitting_height(1))
+    refresh
+  end
+  #--------------------------------------------------------------------------
+  # * Get Window Width
+  #--------------------------------------------------------------------------
+  def window_width
+    return 160
+  end
+  #--------------------------------------------------------------------------
+  # * Refresh
+  #--------------------------------------------------------------------------
+  def refresh
+    contents.clear
+    draw_currency_value(value, custom_currency_unit, 4, 0, contents.width - 8)
+  end
+  #--------------------------------------------------------------------------
+  # * Get Party Gold
+  #--------------------------------------------------------------------------
+  def value
+    $game_party.apple
+  end
+  #--------------------------------------------------------------------------
+  # Get Currency Unit
+  #--------------------------------------------------------------------------
+  def custom_currency_unit
+    Apple_Barter_Module::Unit
+  end
+
+  #--------------------------------------------------------------------------
+  # * Open Window
+  #--------------------------------------------------------------------------
+  def open
+    refresh
+    super
+  end
+end
+
+class Apple_Window_ShopCommand < Window_HorzCommand
+  #--------------------------------------------------------------------------
+  # * Object Initialization
+  #--------------------------------------------------------------------------
+  def initialize(window_width, purchase_only)
+    @window_width = window_width
+    @purchase_only = purchase_only
+    super(0, 0)
+  end
+  #--------------------------------------------------------------------------
+  # * Get Window Width
+  #--------------------------------------------------------------------------
+  def window_width
+    @window_width
+  end
+  #--------------------------------------------------------------------------
+  # * Get Digit Count
+  #--------------------------------------------------------------------------
+  def col_max
+    return 3
+  end
+  #--------------------------------------------------------------------------
+  # * Create Command List
+  #--------------------------------------------------------------------------
+  def make_command_list
+    add_command("Trade",    :buy)
+    add_command(Vocab::ShopSell,   :sell,   !@purchase_only)
+    add_command(Vocab::ShopCancel, :cancel)
+  end
+end
+
+class Game_Party < Game_Unit
+  
+  attr_reader :apple
+  
+  alias game_party_apple_init initialize unless $@
+  def initialize
+    game_party_apple_init
+    @apple = 0 
+  end
+  
+  def max_apple
+    return 99
+  end
+  
+  def apple_value
+      limit = 0
+      number = 0
+      case Apple_Barter_Module::Unit_class_id
+      when 0
+        while (limit != $game_party.items.size)
+        if $game_party.items[limit].id == Apple_Barter_Module::Unit_id
+        number = $game_party.item_number($game_party.items[limit])  
+        limit += 1
+        else
+        limit += 1
+        end
+        end
+      when 1
+        while (limit != $game_party.weapons.size)
+        if $game_party.weapons[limit].id == Apple_Barter_Module::Unit_id
+        number = $game_party.item_number($game_party.weapons[limit])  
+        limit += 1
+        else
+        limit += 1
+        end
+        end  
+      when 2
+        while (limit != $game_party.armors.size)
+        if $game_party.armors[limit].id == Apple_Barter_Module::Unit_id
+        number = $game_party.item_number($game_party.armors[limit])  
+        limit += 1
+        else
+        limit += 1
+        end
+        end  
+      end
+      @apple = number
+  end
+  
+  def lose_apple(amount)
+    @apple -= amount
+    alimit  = 0
+    alimit2 = 0
+    alimit3 = 0
+    
+    case Apple_Barter_Module::Unit_class_id
+    when 0
+          while (alimit != $game_party.items.size)
+          if $game_party.items[alimit].id == Apple_Barter_Module::Unit_id
+          alimit2 = alimit  
+          alimit += 1
+          else
+          alimit += 1
+          end
+          end
+          $game_party.lose_item($game_party.items[alimit2], amount, include_equip = false)
+                  
+    when 1
+          while (alimit != $game_party.weapons.size)
+          if $game_party.weapons[alimit].id == Apple_Barter_Module::Unit_id
+          alimit2 = alimit  
+          alimit += 1
+          else
+          alimit += 1
+          end
+          end
+          
+          $game_party.lose_item($game_party.weapons[alimit2], amount, include_equip = false)
+          
+    when 2
+          while (alimit != $game_party.armors.size)
+          if $game_party.armors[alimit].id == Apple_Barter_Module::Unit_id
+          alimit2 = alimit  
+          alimit += 1
+          else
+          alimit += 1
+          end
+          end
+#~           while (alimit3 != amount)
+          $game_party.lose_item($game_party.armors[alimit2], amount, include_equip = false)
+#~           alimit3 += 1
+#~           end
+    end
+  end
+end
+
+def apple_barter_go(shop)
+  SceneManager.call(Apple_Barter)
+  SceneManager.scene.prepare(Apple_Barter_Module::Goods[shop],Apple_Barter_Module::Purchase_only)
+end
+# My first script :D Pls no bully.
+# By: caelumania 
+# 8/4/14
