@@ -5,3 +5,13 @@ Graphics/Battlers/$vampire_a
 Graphics/Battlers/$Bat_down
 Graphics/Battlers/$Bat_down
 Graphics/Battlers/Monster1
+Graphics/Battlers/$OrcPeasant
+Graphics/Battlers/$OrcPeasant
+Graphics/Battlers/$OrcPeasant
+Graphics/Battlers/$OrcPeasant
+Graphics/Battlers/$$OrcPeasant
+Graphics/Battlers/$$OrcPeasant
+Graphics/Battlers/$$OrcPeasant
+Graphics/Battlers/$$OrcPeasant
+Graphics/Battlers/$$OrcPeasant
+Graphics/Battlers/$$Orc Peasant

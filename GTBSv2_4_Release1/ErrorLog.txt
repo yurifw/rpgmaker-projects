@@ -1,7 +1,8 @@
-Acezon - F12 reset fix:82:in `sub!' :  invalid byte sequence in UTF-8  (ArgumentError) 
-	from Acezon - F12 reset fix:82:in `focus_game_window'
-	from Acezon - F12 reset fix:58:in `first_scene_class'
-	from SceneManager:22:in `run'
+[GTBS] Scene_Battle:261:in `create_battlers' :  Please place some actor/placement events on your battle map! Exiting to title  (RuntimeError) 
+	from [GTBS] Scene_Battle:48:in `prepare_GTBS'
+	from [GTBS] Scene_Battle:36:in `start'
+	from Scene_Base:12:in `main'
+	from SceneManager:23:in `run'
 	from Main:25:in `block in <main>'
 	from Acezon - F12 reset fix:48:in `call'
 	from Acezon - F12 reset fix:48:in `block in rgss_main' 

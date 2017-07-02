@@ -1,0 +1,11 @@
+custo de SoulSphere:
+o custo em soulsphere de cada unidade depende da curva de atributos:
+para cada E, adicione 0.5
+para cada D, adicione 1
+para cada c, adicione 1.5
+para cada B, adicione 2
+para cada A, adicione 2.5
+
+cada unidade deve ter 8 habilidades, para cada 2 habilidades extras, some 1 soulsphere
+
+também podem ser somadas soulspheres para compensar por habilidades op
