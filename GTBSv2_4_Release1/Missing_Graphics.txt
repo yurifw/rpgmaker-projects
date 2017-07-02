@@ -15,3 +15,7 @@ Graphics/Battlers/$$OrcPeasant
 Graphics/Battlers/$$OrcPeasant
 Graphics/Battlers/$$OrcPeasant
 Graphics/Battlers/$$Orc Peasant
+Graphics/Battlers/$$Orc Peasant
+Graphics/Battlers/$$Orc Peasant
+Graphics/Battlers/TombZombies
+Graphics/Battlers/$Orc Peasant_down
